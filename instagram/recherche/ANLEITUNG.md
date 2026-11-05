@@ -38,12 +38,14 @@ In Claude Code `/ig-viral` aufrufen und die Datei angeben, oder direkt:
 python3 .claude/skills/ig-viral/swipe.py instagram/recherche/2026-11.tsv
 ```
 
-## Bekannte Einschränkung: deutsche Hooks
+## Deutsche Hooks
 
-Die Erkennung der 26 Hook-Formeln und der Hook-Score sind auf **englische**
-Formulierungen ausgelegt. Deutsche Hooks erscheinen als `unclassified`. Die
-Rangliste nach Outlier-Faktor stimmt trotzdem; die Muster liest man bei
-deutschen Hooks von Hand heraus (bzw. lässt Claude das bei `/ig-viral` tun).
+Die 26 Hook-Formeln erkennen auch deutsche Formulierungen (siehe
+`.claude/skills/README.md`). Was trotzdem als `unclassified` erscheint, von Hand
+lesen: Das sind entweder beschreibende Hooks ohne Muster („Unser Arbeitstag im
+Revier“) oder ein Muster, das noch fehlt.
+
+Der Hook-Score ist bei deutschen Texten nur ein grober Anhaltspunkt.
 
 ## Regeln
 
