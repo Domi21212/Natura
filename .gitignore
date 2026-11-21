@@ -1,3 +1,4 @@
 instagram/recherche/*.tsv
 !instagram/recherche/vorlage.tsv
 __pycache__/
+instagram/reels/**/ENTWURF_*.mp4

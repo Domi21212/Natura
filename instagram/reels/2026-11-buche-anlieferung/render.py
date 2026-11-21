@@ -40,14 +40,32 @@ def textcard(lines,fnt,pad=(46,34),gap=14,radius=22):
     for l,b in zip(lines,bbs):
         dr.text(((cw-(b[2]-b[0]))/2-b[0],y-b[1]+4),l,font=fnt,fill=BEIGE); y+=lh+gap
     return im
-T1=textcard(['Buchenstammholz','auf dem Weg zum Kunden'],font(FB,74))
-T2=textcard(['Danke für die langjährige','Zusammenarbeit.'],font(FB,66))
-def overlay(fr,card,t,t0,t1,y):
+# Gewicht des Stamms aus Bild 1 (Tonnen), z. B. GEWICHT=2,8 python3 render.py out.mp4
+GEWICHT=os.environ.get('GEWICHT','X')
+# Safe Zone Instagram: y 230..1440, rechts 230 px frei -> Karten max. 790 px breit, zentriert auf x=455
+SAFE_L,SAFE_R=60,W-230
+def fitcard(lines,size):
+    while True:
+        c=textcard(lines,font(FB,size))
+        if c.width<=SAFE_R-SAFE_L or size<40: return c
+        size-=2
+# (start, ende, zeilen, schriftgröße, y, einblenden)
+CARDS=[(0.0,1.2,['Wie schwer ist','dieser Stamm?'],84,300,False),
+       (1.2,3.0,['Tipp abgeben.','Auflösung kommt.'],70,300,False),
+       (3.4,6.6,['Unser eigener','MAN-Langholz-Lkw'],62,300,True),
+       (8.6,10.2,['Gurt für Gurt','gesichert'],62,300,True),
+       (10.4,13.8,['Ankunft','beim Kunden'],62,300,True),
+       (14.2,19.2,['Jetzt übernimmt','der Kran'],62,300,True),
+       (19.2,22.8,['Auflösung:',f'rund {GEWICHT} Tonnen'],84,300,False),
+       (23.2,27.0,['Danke für die','langjährige','Zusammenarbeit.'],64,300,True)]
+CARDS=[(a,b,fitcard(l,sz),y,fi) for a,b,l,sz,y,fi in CARDS]
+def overlay(fr,card,t,t0,t1,y,fadein=True):
     if not(t0<=t<t1): return
-    a=min(1,(t-t0)/0.3,(t1-t)/0.3); a=max(0,a)
-    dy=int((1-ease(min(1,(t-t0)/0.35)))*24)
+    a=min(1,(t-t0)/0.25 if fadein else 1,(t1-t)/0.2 if t1<26.99 else 1); a=max(0,a)
+    dy=int((1-ease(min(1,(t-t0)/0.3)))*20) if fadein else 0
     c=card.copy(); al=c.getchannel('A').point(lambda v:int(v*a)); c.putalpha(al)
-    fr.paste(c,((W-c.width)//2,y+dy),c)
+    x=(SAFE_L+SAFE_R)//2-c.width//2
+    fr.paste(c,(x,y+dy),c)
 # Endkarte
 def endcard():
     bg=crop(IM[1],600,925,840).filter(ImageFilter.GaussianBlur(22))
@@ -73,17 +91,16 @@ def shot(t):
         if a<=t<b:
             x=ease((t-a)/(b-a)); v=[s0[i]+(s1[i]-s0[i])*x for i in range(3)]
             fr=crop(IM[p],*v)
-            overlay(fr,T1,t,0.2,3.0,330)
-            overlay(fr,T2,t,23.3,27.0,330)
+            for a2,b2,c2,y2,fi in CARDS: overlay(fr,c2,t,a2,b2,y2,fi)
             return fr
 if __name__=='__main__':
     if sys.argv[1]=='stills':
-        for tt in [0.6,2.0,5,7.5,9.3,12,16,21,25,28.5]:
+        for tt in [0.05,2.0,5,9.3,12,16,21,25]:
             frame(tt).save(f'still_{tt:05.1f}.jpg',quality=88)
         sys.exit()
     out=sys.argv[1]
     cmd=['ffmpeg','-y','-loglevel','error','-f','rawvideo','-pix_fmt','rgb24','-s',f'{W}x{H}','-r',str(FPS),'-i','-',
-         '-i','music.wav','-c:v','libx264','-preset','slow','-crf','17','-pix_fmt','yuv420p','-profile:v','high',
+         '-i',os.path.join(os.path.dirname(os.path.abspath(__file__)),'music.wav'),'-c:v','libx264','-preset','slow','-crf','17','-pix_fmt','yuv420p','-profile:v','high',
          '-c:a','aac','-b:a','192k','-ar','44100','-shortest','-movflags','+faststart',out]
     pr=subprocess.Popen(cmd,stdin=subprocess.PIPE)
     for i in range(int(DUR*FPS)):
